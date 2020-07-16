@@ -1,18 +1,30 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {List, Button, FormControl, Input, InputLabel } from '@material-ui/core';
 import Todo from './todo'
 import './App.css';
+import { db } from './firebase'
+import firebase from 'firebase'
 
 function App() {
 
-  const [todos, setTodos] = useState(['Task 1', 'Task 2'])
+  const [todos, setTodos] = useState([])
   const [input, setInput] = useState('')
+
+  useEffect(() => {
+
+    db.collection('todos').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+      setTodos(snapshot.docs.map(doc => ({id: doc.id, todo:doc.data().todo})))
+    })
+
+  }, [])
 
   const addTodo = (event) => {
     event.preventDefault()
-    setTodos(pre =>(
-      [...pre, input]
-    ))
+    db.collection('todos').add({
+      todo: input,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    
     setInput('')
   }
 
@@ -24,12 +36,12 @@ function App() {
           <InputLabel>Enter Todo:</InputLabel>
           <Input value={input} onChange={event => setInput(event.target.value)} />
         </FormControl>
-        {/* <input value={input} onChange={event => setInput(event.target.value)} /> */}
+        
         <Button disabled={!input} type="submit" onClick={addTodo} variant="contained" color="primary">
           Add Todo
         </Button>
       </form>
-      <List component="nav" aria-label="main mailbox folders" >
+      <List component="nav" aria-label="main mailbox folders">
         {
           todos.map(todo => (
             <Todo todo={todo} />
